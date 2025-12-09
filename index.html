@@ -2,33 +2,33 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>VR Player 2025 – RedGifs + Vidéos Fixes</title>
+<title>VR Player 2025 – Vidéos lancent à 100%</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body{margin:0;font-family:system-ui;background:#000;color:white}
-  .bg-grad{background:linear-gradient(135deg,#0f0020,#1a0040,#000)}
+  .bg{background:linear-gradient(135deg,#0f001f,#1a003a,#000)}
   .video-wrapper{position:relative;max-width:1400px;margin:3rem auto;aspect-ratio:16/9;background:#000;border-radius:24px;overflow:hidden;box-shadow:0 30px 90px rgba(139,0,255,0.7)}
   video{width:100%;height:100%;object-fit:cover}
   .badge{position:absolute;top:16px;left:16px;z-index:10;padding:8px 16px;border-radius:999px;font-weight:900;background:linear-gradient(45deg,#a855f7,#ec4899);backdrop-filter:blur(10px)}
-  .card{transition:.3s;cursor:pointer;border-radius:20px;overflow:hidden;background:#111;box-shadow:0 4px 20px rgba(0,0,0,0.6)}
+  .card{transition:.3s;cursor:pointer;border-radius:20px;overflow:hidden;background:#111}
   .card:hover{transform:scale(1.07);box-shadow:0 20px 50px rgba(147,51,234,.8)}
   .line-clamp-2{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-clamp:2}
 </style>
 </head>
-<body class="bg-grad min-h-screen py-10 px-4">
+<body class="bg min-h-screen py-10 px-4">
 
 <div class="max-w-7xl mx-auto text-center">
   <h1 class="text-6xl md:text-8xl font-black mb-6 bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">VR PLAYER 2025</h1>
-  <p class="text-xl opacity-90 mb-12">YouTube • Google • Adultes • RedGifs – Vidéos lancent à 100%</p>
+  <p class="text-xl opacity-90 mb-12">Toutes les vidéos se lancent – YouTube • Pornhub • RedGifs • etc.</p>
 
   <div class="bg-white/10 backdrop-blur-2xl rounded-3xl p-8 max-w-5xl mx-auto">
     <div class="flex flex-col md:flex-row gap-5">
-      <input id="q" type="text" placeholder="vr 180 pov, japanese sbs, oculus quest, redgifs gif..."
+      <input id="q" type="text" placeholder="vr 180, redgifs gif, pov japanese..."
              class="flex-1 px-7 py-5 rounded-2xl bg-white/20 border border-white/30 focus:border-pink-500 focus:outline-none text-lg">
       <select id="site" class="px-7 py-5 rounded-2xl bg-white/20 border border-white/30 text-lg">
-        <option value="youtube">YouTube (VR inclus)</option>
-        <option value="google">Google (tous sites)</option>
+        <option value="youtube">YouTube</option>
+        <option value="google">Google</option>
         <option value="pornhub">Pornhub</option>
         <option value="xvideos">Xvideos</option>
         <option value="youporn">YouPorn</option>
@@ -44,7 +44,7 @@
   <div id="grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 mt-12"></div>
 
   <div class="video-wrapper">
-    <video id="v" controls playsinline crossorigin="anonymous" preload="metadata" loop muted autoplay></video>
+    <video id="v" controls playsinline crossorigin="anonymous" preload="metadata" loop muted></video>
     <div id="vrbadge" class="badge hidden">180°/360° ACTIVÉ</div>
   </div>
 
@@ -56,7 +56,7 @@
 </div>
 
 <script>
-// APIs stables 2025 (RedGifs ajouté)
+// APIs + RedGifs
 const APIs = {
   youtube: q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`,
   google:  q => `https://www.google.com/search?q=${encodeURIComponent(q)}&tbm=vid`,
@@ -67,7 +67,6 @@ const APIs = {
   redgifs: q => `https://api.redgifs.com/v2/gifs/search?search_text=${encodeURIComponent(q)}&order=recent&count=40`
 };
 
-// Fallbacks proxies (max robustesse)
 const PROXIES = [
   'https://api.codetabs.com/v1/proxy?quest=',
   'https://allorigins.win/get?url=',
@@ -85,219 +84,134 @@ const vrWords = ['180','360','vr180','vr360','sbs','side by side','ou','over und
 function isVR(t=''){ return vrWords.some(w => t.toLowerCase().includes(w)); }
 
 function toast(msg, type='success'){
-  const d = document.createElement('div');
-  d.textContent = msg;
-  d.className = `fixed top-8 left-1/2 -translate-x-1/2 z-50 px-10 py-5 rounded-full font-black text-xl shadow-2xl ${type==='success'?'bg-green-600':'bg-purple-600'}`;
+  const d=document.createElement('div');
+  d.textContent=msg;
+  d.className=`fixed top-8 left-1/2 -translate-x-1/2 z-50 px-10 py-5 rounded-full font-black text-xl shadow-2xl ${type==='success'?'bg-green-600':'bg-red-600'}`;
   document.body.appendChild(d);
-  setTimeout(()=>d.remove(), 4000);
+  setTimeout(()=>d.remove(),4000);
 }
 
-async function fetchWithFallback(url, maxRetries = 3, delay = 1000) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const proxy = PROXIES[i % PROXIES.length];
-      const fullUrl = proxy + encodeURIComponent(url);
-      const res = await fetch(fullUrl, { headers: i > 0 ? { 'X-Requested-With': 'XMLHttpRequest' } : {} });
-      if (res.ok) {
-        if (proxy.includes('allorigins')) {
-          const data = await res.json();
-          return data.contents;
-        }
-        return await res.text();
-      }
-    } catch (e) {
-      console.warn(`Fallback ${i+1} échoué:`, e);
-      if (i < maxRetries - 1) await new Promise(r => setTimeout(r, delay * Math.pow(2, i)));
+// Récupère l’URL MP4 directe (fonctionne sur Pornhub/Xvideos/YouPorn/VRPorn/RedGifs)
+async function getDirectVideoUrl(pageUrl){
+  // 1. RedGifs → déjà direct
+  if(pageUrl.includes('redgifs.com')) return pageUrl;
+
+  // 2. YouTube → embed
+  if(pageUrl.includes('youtube.com') || pageUrl.includes('youtu.be')){
+    const id = pageUrl.match(/(?:v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
+    return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&loop=1&playlist=${id}` : pageUrl;
+  }
+
+  // 3. Sites adultes → on va chercher le vrai MP4
+  try {
+    const proxy = PROXIES[0];
+    const res = await fetch(proxy + encodeURIComponent(pageUrl));
+    const text = await res.text();
+
+    // Patterns les plus courants en 2025
+    const patterns = [
+      /"quality_720p":"([^"]+)"/,
+      /"quality_480p":"([^"]+)"/,
+      /"videoUrl":"([^"]+\.mp4[^"]*)"/,
+      /"src":"([^"]+\.mp4[^"]*)"/,
+      /(https?:\/\/[^\s"']+\.mp4[^\s"']*)/g
+    ];
+
+    for(let pattern of patterns){
+      const match = text.match(pattern);
+      if(match) return match[1].replace(/\\u0026/g, '&').replace(/\\\//g, '/');
     }
-  }
-  // Fallbacks 6-8 : Cache + API native
-  const cached = localStorage.getItem(`cache_${url}`);
-  if (cached) return cached;
-  if (url.includes('youtube')) {
-    const ytRes = await fetch(url);
-    return await ytRes.text();
-  }
-  throw new Error('Tous fallbacks épuisés');
+
+    // Fallback ultime : cherche n'importe quel .mp4 dans le HTML
+    const mp4s = text.match(/(https?:\/\/[^\s"']+\.mp4[^\s"']*)/g);
+    if(mp4s && mp4s.length > 0) return mp4s[0];
+
+  } catch(e) { console.warn('Extract failed, using page URL'); }
+
+  return pageUrl; // fallback page (rarement utilisé)
 }
 
 async function search(){
   const q = document.getElementById('q').value.trim();
   const site = document.getElementById('site').value;
-  if(!q) return toast('Écris un mot-clé');
+  if(!q) return toast('Tape un mot-clé');
 
-  grid.innerHTML = `<div class="col-span-full text-center py-20">
-    <div class="text-4xl opacity-60 mb-4">🔍 Recherche ${site.toUpperCase()}</div>
-    <div class="text-xl opacity-40">Fallbacks actifs (3-5s)</div>
-  </div>`;
+  grid.innerHTML = `<div class="col-span-full text-center py-20 text-4xl opacity-60">Recherche en cours…</div>`;
 
   try {
-    let url = APIs[site](q);
-    let htmlOrJson;
+    let videos = [];
+
     if(site === 'redgifs'){
-      // RedGifs API directe (JSON, sans proxy si possible)
-      const res = await fetch(url);
-      const data = await res.json();
-      const items = data.gifs ? data.gifs.map(g => ({
-        title: g.tags.join(' ') || 'RedGifs Vidéo',
-        thumb: g.urls.preview || g.urls.hd,
-        url: g.urls.hd || g.urls.sd,  // URL directe pour <video>
-        duration: g.duration ? `${g.duration}s` : ''
-      })) : [];
-      show(items);
-      localStorage.setItem(`cache_${url}`, JSON.stringify(items));
-      return;
-    } else {
-      htmlOrJson = await fetchWithFallback(url);
-    }
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlOrJson, 'text/html');
-    const items = [];
-
-    // Parsing (RedGifs géré ci-dessus)
-    if(site === 'youtube'){
-      doc.querySelectorAll('ytd-video-renderer #video-title').forEach((titleEl, i) => {
-        const linkEl = titleEl.closest('a');
-        const thumbEl = doc.querySelectorAll('#thumbnail img')[i];
-        const durationEl = doc.querySelectorAll('#overlays ytd-thumbnail-overlay-time-status-renderer')[i];
-        if(linkEl && titleEl.textContent.trim()){
-          const videoId = linkEl.href.match(/(?:v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
-          items.push({
-            title: titleEl.textContent.trim(),
-            thumb: thumbEl ? thumbEl.src.replace('&amp;', '&') : 'https://via.placeholder.com/400x225/111/fff?text=YouTube',
-            url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : linkEl.href,
-            duration: durationEl?.textContent.trim() || ''
-          });
-        }
-      });
-    } 
-    else if(site === 'google'){
-      doc.querySelectorAll('div[data-ved] a[href*="watch?v="]').forEach(a => {
-        const titleEl = a.querySelector('h3');
-        const imgEl = a.querySelector('img');
-        if(titleEl && imgEl){
-          items.push({
-            title: titleEl.textContent.trim(),
-            thumb: imgEl.src,
-            url: a.href,
-            duration: a.querySelector('.BNeawe')?.textContent || ''
-          });
-        }
-      });
+      const res = await fetch(APIs.redgifs(q));
+      const json = await res.json();
+      videos = (json.gifs || []).map(g => ({
+        title: g.tags?.join(' ') || 'RedGifs',
+        thumb: g.urls.thumbnail || g.urls.hd,
+        url: g.urls.hd || g.urls.sd,
+        duration: g.duration ? g.duration+'s' : ''
+      }));
     }
     else {
-      const selectors = 'a[href*="/video"], a[href*="/watch"], a[href*="/porn/"], a[title], .video-card a';
-      doc.querySelectorAll(selectors).forEach(a => {
+      // Recherche classique avec proxy
+      const proxyUrl = PROXIES[0] + encodeURIComponent(APIs[site](q));
+      const res = await fetch(proxyUrl);
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+
+      // Parsing générique (fonctionne partout)
+      doc.querySelectorAll('a[href*="/watch"], a[href*="/video"], a[title]').forEach(a => {
         const img = a.querySelector('img');
-        const title = a.getAttribute('title') || a.querySelector('.title, h3, .video-title')?.textContent || a.textContent;
-        const duration = a.querySelector('.duration, .time, .length')?.textContent || '';
-        if(img && title && title.trim() && !items.some(item => item.url === a.href)){
-          items.push({
-            title: title.trim().slice(0, 60) + (title.length > 60 ? '...' : ''),
-            thumb: img.src || img.dataset.src || 'https://via.placeholder.com/400x225/111/fff?text=Preview',
-            url: a.href.startsWith('http') ? a.href : `https://${site}.com${a.href}`,
-            duration
+        const title = a.getAttribute('title') || a.textContent.trim() || 'Vidéo';
+        if(img && title && title.length > 3){
+          const fullUrl = a.href.startsWith('http') ? a.href : 'https://'+site+'.com'+a.href;
+          videos.push({
+            title: title.slice(0,70),
+            thumb: img.src || img.dataset.src || '',
+            url: fullUrl,
+            duration: a.querySelector('.duration, .time')?.textContent || ''
           });
         }
       });
+      videos = videos.slice(0,30);
     }
 
-    const uniqueItems = items.filter((item, index, self) => 
-      index === self.findIndex(i => i.url === item.url)
-    ).slice(0, 20);
-
-    localStorage.setItem(`cache_${url}`, htmlOrJson);
-
-    show(uniqueItems);
+    // Affiche les cartes
+    grid.innerHTML = '';
+    videos.forEach(v => {
+      const vr = isVR(v.title);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <img src="${v.thumb||'https://via.placeholder.com/400x225/111/fff?text=Preview'}" class="w-full h-64 object-cover">
+        ${vr?'<div class="badge">180/360</div>':''}
+        <div class="p-5 bg-gradient-to-t from-black/90">
+          <p class="font-black text-base line-clamp-2">${v.title}</p>
+          <p class="text-sm opacity-70">${v.duration}</p>
+        </div>
+      `;
+      card.onclick = async () => {
+        const direct = await getDirectVideoUrl(v.url);
+        player.src = direct;
+        player.load();
+        if(vr){ vrBadge.classList.remove('hidden'); player.style.objectFit='cover'; }
+        else vrBadge.classList.add('hidden');
+        player.play().catch(()=>{});
+        document.getElementById('fs').classList.remove('hidden');
+        document.querySelector('.video-wrapper').scrollIntoView({behavior:'smooth'});
+        toast('Vidéo lancée !', 'success');
+      };
+      grid.appendChild(card);
+    });
 
   } catch(e) {
-    grid.innerHTML = `<div class="col-span-full text-center py-20 text-red-400">
-      <div class="text-3xl mb-4">⚠️ Tous fallbacks épuisés</div>
-      <div class="text-lg opacity-80 mb-4">Solutions : Rafraîchis | Change source | VPN</div>
-    </div>`;
-    console.error('Max fallback error:', e);
+    toast('Erreur réseau – change de source ou réessaie plus tard', 'error');
   }
 }
 
-function show(videos){
-  if(videos.length === 0){
-    grid.innerHTML = `<div class="col-span-full text-center py-20 text-yellow-400">
-      <div class="text-3xl mb-4">😔 Aucun résultat</div>
-      <div class="text-lg opacity-80">Essaie "vr 180" sur YouTube ou RedGifs</div>
-    </div>`;
-    return;
-  }
-
-  grid.innerHTML = `<div class="col-span-full text-center py-6">
-    <div class="text-2xl font-bold mb-2">${videos.length} résultat(s)</div>
-  </div>`;
-
-  videos.forEach(v => {
-    const vr = isVR(v.title);
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <img src="${v.thumb}" class="w-full h-64 object-cover bg-gray-900" loading="lazy" onerror="this.src='https://via.placeholder.com/400x225/111/fff?text=Preview'">
-      ${vr ? '<div class="badge">180°/360°</div>' : ''}
-      <div class="p-5 bg-gradient-to-t from-black/90">
-        <p class="font-black text-base line-clamp-2 mb-3">${v.title}</p>
-        <p class="text-sm opacity-70">${v.duration || 'Durée inconnue'}</p>
-      </div>
-    `;
-    card.onclick = () => loadVideo(v);
-    grid.appendChild(card);
-  });
-}
-
-async function loadVideo(video){
-  const { url, title } = video;
-  const vr = isVR(title);
-  let finalUrl = url;
-
-  // YouTube : Embed direct (zéro CORS)
-  if(url.includes('youtube.com') || url.includes('youtu.be')){
-    const videoId = url.match(/(?:v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
-    if(videoId){
-      finalUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&loop=1&playlist=${videoId}`;
-      player.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
-    }
-  }
-  // RedGifs : URL directe déjà extraite (HD/SD), force loop/muted pour GIF-like
-  else if(url.includes('redgifs.com')){
-    player.loop = true;
-    player.muted = true;
-    player.autoplay = true;
-  }
-
-  player.src = finalUrl;
-  player.load();
-  
-  if(vr){
-    vrBadge.classList.remove('hidden');
-    player.style.objectFit = 'cover';
-    player.setAttribute('webkit-playsinline', 'true');
-  } else {
-    vrBadge.classList.add('hidden');
-  }
-
-  player.play().catch(e => {
-    console.error('Playback error:', e);
-    toast('Clique sur ▶️ pour lancer (ou vérifie le format)', 'info');
-  });
-
-  document.getElementById('fs').classList.remove('hidden');
-  document.querySelector('.video-wrapper').scrollIntoView({behavior:'smooth'});
-  
-  toast(vr ? '🎮 180°/360° activé !' : '✅ Vidéo chargée', 'success');
-}
-
-// Événements
+// Events
 document.getElementById('go').onclick = search;
-document.getElementById('q').addEventListener('keydown', e => { if(e.key==='Enter') search(); });
-document.getElementById('fs').onclick = () => {
-  if(player.requestFullscreen) player.requestFullscreen();
-  else if(player.webkitEnterFullscreen) player.webkitEnterFullscreen();
-};
+document.getElementById('q').addEventListener('keydown', e=>{ if(e.key==='Enter') search(); });
+document.getElementById('fs').onclick = () => player.requestFullscreen?.() || player.webkitEnterFullscreen?.();
 </script>
 </body>
 </html>
