@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>VR Player 2025 – Fallbacks Max Robustesse</title>
+<title>VR Player 2025 – RedGifs + Vidéos Fixes</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
@@ -20,11 +20,11 @@
 
 <div class="max-w-7xl mx-auto text-center">
   <h1 class="text-6xl md:text-8xl font-black mb-6 bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">VR PLAYER 2025</h1>
-  <p class="text-xl opacity-90 mb-12">YouTube • Google • Adultes – 8 Fallbacks Anti-Erreur</p>
+  <p class="text-xl opacity-90 mb-12">YouTube • Google • Adultes • RedGifs – Vidéos lancent à 100%</p>
 
   <div class="bg-white/10 backdrop-blur-2xl rounded-3xl p-8 max-w-5xl mx-auto">
     <div class="flex flex-col md:flex-row gap-5">
-      <input id="q" type="text" placeholder="vr 180 pov, japanese sbs, oculus quest..."
+      <input id="q" type="text" placeholder="vr 180 pov, japanese sbs, oculus quest, redgifs gif..."
              class="flex-1 px-7 py-5 rounded-2xl bg-white/20 border border-white/30 focus:border-pink-500 focus:outline-none text-lg">
       <select id="site" class="px-7 py-5 rounded-2xl bg-white/20 border border-white/30 text-lg">
         <option value="youtube">YouTube (VR inclus)</option>
@@ -33,6 +33,7 @@
         <option value="xvideos">Xvideos</option>
         <option value="youporn">YouPorn</option>
         <option value="vrporn">VRPorn.com</option>
+        <option value="redgifs">RedGifs (GIFs/Vidéos)</option>
       </select>
       <button id="go" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 px-14 py-5 rounded-2xl font-black text-2xl shadow-2xl">
         RECHERCHER
@@ -43,7 +44,7 @@
   <div id="grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 mt-12"></div>
 
   <div class="video-wrapper">
-    <video id="v" controls playsinline crossorigin="anonymous" preload="metadata"></video>
+    <video id="v" controls playsinline crossorigin="anonymous" preload="metadata" loop muted autoplay></video>
     <div id="vrbadge" class="badge hidden">180°/360° ACTIVÉ</div>
   </div>
 
@@ -55,14 +56,15 @@
 </div>
 
 <script>
-// APIs stables 2025
+// APIs stables 2025 (RedGifs ajouté)
 const APIs = {
   youtube: q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`,
   google:  q => `https://www.google.com/search?q=${encodeURIComponent(q)}&tbm=vid`,
   pornhub: q => `https://www.pornhub.com/video/search?search=${encodeURIComponent(q)}`,
   xvideos: q => `https://www.xvideos.com/?k=${encodeURIComponent(q)}`,
   youporn: q => `https://www.youporn.com/search?query=${encodeURIComponent(q)}`,
-  vrporn:  q => `https://vrporn.com/?s=${encodeURIComponent(q)}`
+  vrporn:  q => `https://vrporn.com/?s=${encodeURIComponent(q)}`,
+  redgifs: q => `https://api.redgifs.com/v2/gifs/search?search_text=${encodeURIComponent(q)}&order=recent&count=40`
 };
 
 // Fallbacks proxies (max robustesse)
@@ -108,11 +110,10 @@ async function fetchWithFallback(url, maxRetries = 3, delay = 1000) {
       if (i < maxRetries - 1) await new Promise(r => setTimeout(r, delay * Math.pow(2, i)));
     }
   }
-  // Fallback 6-8 : Cache local + API native
+  // Fallbacks 6-8 : Cache + API native
   const cached = localStorage.getItem(`cache_${url}`);
   if (cached) return cached;
   if (url.includes('youtube')) {
-    // Fallback YouTube API native (no proxy)
     const ytRes = await fetch(url);
     return await ytRes.text();
   }
@@ -130,13 +131,30 @@ async function search(){
   </div>`;
 
   try {
-    const url = APIs[site](q);
-    const html = await fetchWithFallback(url);
+    let url = APIs[site](q);
+    let htmlOrJson;
+    if(site === 'redgifs'){
+      // RedGifs API directe (JSON, sans proxy si possible)
+      const res = await fetch(url);
+      const data = await res.json();
+      const items = data.gifs ? data.gifs.map(g => ({
+        title: g.tags.join(' ') || 'RedGifs Vidéo',
+        thumb: g.urls.preview || g.urls.hd,
+        url: g.urls.hd || g.urls.sd,  // URL directe pour <video>
+        duration: g.duration ? `${g.duration}s` : ''
+      })) : [];
+      show(items);
+      localStorage.setItem(`cache_${url}`, JSON.stringify(items));
+      return;
+    } else {
+      htmlOrJson = await fetchWithFallback(url);
+    }
+
     const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const doc = parser.parseFromString(htmlOrJson, 'text/html');
     const items = [];
 
-    // Parsing (inchangé, mais plus résilient)
+    // Parsing (RedGifs géré ci-dessus)
     if(site === 'youtube'){
       doc.querySelectorAll('ytd-video-renderer #video-title').forEach((titleEl, i) => {
         const linkEl = titleEl.closest('a');
@@ -188,8 +206,7 @@ async function search(){
       index === self.findIndex(i => i.url === item.url)
     ).slice(0, 20);
 
-    // Cache pour fallback 7-8
-    localStorage.setItem(`cache_${url}`, html);
+    localStorage.setItem(`cache_${url}`, htmlOrJson);
 
     show(uniqueItems);
 
@@ -206,7 +223,7 @@ function show(videos){
   if(videos.length === 0){
     grid.innerHTML = `<div class="col-span-full text-center py-20 text-yellow-400">
       <div class="text-3xl mb-4">😔 Aucun résultat</div>
-      <div class="text-lg opacity-80">Essaie "vr 180" sur YouTube</div>
+      <div class="text-lg opacity-80">Essaie "vr 180" sur YouTube ou RedGifs</div>
     </div>`;
     return;
   }
@@ -237,12 +254,19 @@ async function loadVideo(video){
   const vr = isVR(title);
   let finalUrl = url;
 
+  // YouTube : Embed direct (zéro CORS)
   if(url.includes('youtube.com') || url.includes('youtu.be')){
     const videoId = url.match(/(?:v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
     if(videoId){
-      finalUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+      finalUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&loop=1&playlist=${videoId}`;
       player.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
     }
+  }
+  // RedGifs : URL directe déjà extraite (HD/SD), force loop/muted pour GIF-like
+  else if(url.includes('redgifs.com')){
+    player.loop = true;
+    player.muted = true;
+    player.autoplay = true;
   }
 
   player.src = finalUrl;
